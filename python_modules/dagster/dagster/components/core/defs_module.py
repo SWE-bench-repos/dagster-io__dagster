@@ -355,11 +355,13 @@ def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path,
 
 @dataclass
 class DagsterDefsComponent(Component):
-    """A Python module containing Dagster definitions. Used for implicit loading of
-    Dagster definitions from Python files in the defs folder.
+    """A Python module containing Dagster definitions or Pythonic
+    components. Used for implicit loading of Dagster definitions from
+    Python files in the defs folder.
     """
 
     path: Path
+    components: Mapping[str, Component]
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         module = context.load_defs_relative_python_module(self.path)
@@ -393,7 +395,13 @@ class DagsterDefsComponent(Component):
         if len(lazy_def_objects) > 1:
             return Definitions.merge(*[lazy_def(context) for lazy_def in lazy_def_objects])
 
-        return load_definitions_from_module(module)
+        return Definitions.merge(
+            *[
+                context.build_defs_at_path(child_decl.path)
+                for child_decl in context.component_decl.iterate_child_component_decls()
+            ],
+            load_definitions_from_module(module),
+        )
 
 
 def invoke_inline_template_var(context: ComponentDeclLoadContext, tv: Callable) -> Any:

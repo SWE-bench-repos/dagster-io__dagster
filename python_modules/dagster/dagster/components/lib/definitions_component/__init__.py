@@ -19,5 +19,7 @@ class DefinitionsComponent(Component, Model, Resolvable):
     path: Optional[str]
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        component = DagsterDefsComponent(Path(self.path) if self.path else context.path)
+        component = DagsterDefsComponent(
+            Path(self.path) if self.path else context.path, components={}
+        )
         return component.build_defs(context)
