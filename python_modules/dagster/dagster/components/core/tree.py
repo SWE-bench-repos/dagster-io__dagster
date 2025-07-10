@@ -293,7 +293,6 @@ class ComponentTree:
 
             component_type = None
             file_path = child_decl.path.file_path.relative_to(parent_path)
-            name = file_path
 
             if isinstance(child_decl, ComponentLoaderDecl):
                 name = child_decl.path.instance_key
@@ -303,6 +302,10 @@ class ComponentTree:
 
                 if child_decl.path.instance_key is not None and len(decls) > 1:
                     name = f"{file_path}[{child_decl.path.instance_key}]"
+                else:
+                    name = file_path
+            else:
+                name = file_path
 
             connector = "└── " if idx == total - 1 else "├── "
             out_txt = f"{prefix}{connector}{name}"
