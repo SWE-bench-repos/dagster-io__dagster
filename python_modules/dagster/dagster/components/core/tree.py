@@ -18,7 +18,7 @@ from dagster.components.core.context import ComponentDeclLoadContext, ComponentL
 from dagster.components.core.decl import (
     ComponentDecl,
     ComponentLoaderDecl,
-    CompositePythonDecl,
+    PythonFileDecl,
     YamlDecl,
     build_component_decl_from_context,
 )
@@ -288,25 +288,21 @@ class ComponentTree:
 
         total = len(decls)
         for idx, child_decl in enumerate(decls):
-            if (
-                isinstance(child_decl, CompositePythonDecl)
-                and not child_decl.decls
-                and hide_plain_defs
-            ):
+            if isinstance(child_decl, PythonFileDecl) and not child_decl.decls and hide_plain_defs:
                 continue
 
             component_type = None
             file_path = child_decl.path.file_path.relative_to(parent_path)
+            name = file_path
+
             if isinstance(child_decl, ComponentLoaderDecl):
-                file_path = file_path / "component.py"
-            if isinstance(child_decl, YamlDecl):
+                name = child_decl.path.instance_key
+            elif isinstance(child_decl, YamlDecl):
                 file_path = file_path / "defs.yaml"
                 component_type = child_decl.component_cls.__name__
 
-            if child_decl.path.instance_key is not None and len(decls) > 1:
-                name = f"{file_path}[{child_decl.path.instance_key}]"
-            else:
-                name = file_path
+                if child_decl.path.instance_key is not None and len(decls) > 1:
+                    name = f"{file_path}[{child_decl.path.instance_key}]"
 
             connector = "└── " if idx == total - 1 else "├── "
             out_txt = f"{prefix}{connector}{name}"
@@ -335,7 +331,7 @@ class ComponentTree:
             hide_plain_defs
             and len(decls) > 0
             and all(
-                isinstance(child_decl, CompositePythonDecl) and not child_decl.decls
+                isinstance(child_decl, PythonFileDecl) and not child_decl.decls
                 for child_decl in decls
             )
         ):

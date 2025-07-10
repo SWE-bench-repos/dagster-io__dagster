@@ -27,8 +27,8 @@ from dagster.components.core.defs_module import (
     ComponentFileModel,
     ComponentPath,
     CompositeYamlComponent,
-    DagsterDefsComponent,
     DefsFolderComponent,
+    PythonFileComponent,
     asset_post_processor_list_from_post_processing_dict,
     context_with_injected_scope,
     find_defs_or_component_yaml,
@@ -79,15 +79,15 @@ class ComponentLoaderDecl(ComponentDecl[Component]):
 
 
 @record
-class CompositePythonDecl(ComponentDecl[DagsterDefsComponent]):
-    """Declaration of a DagsterDefsComponent, corresponding to a Python file with zero or more
+class PythonFileDecl(ComponentDecl[PythonFileComponent]):
+    """Declaration of a PythonFileComponent, corresponding to a Python file with zero or more
     ComponentLoaderDecls and zero or more plain Dagster defs.
     """
 
     decls: Mapping[str, ComponentLoaderDecl]
 
-    def _load_component(self) -> "DagsterDefsComponent":
-        return DagsterDefsComponent(
+    def _load_component(self) -> "PythonFileComponent":
+        return PythonFileComponent(
             components={
                 attr: self.context.load_component_at_path(decl.path)
                 for attr, decl in self.decls.items()
@@ -273,19 +273,13 @@ def build_component_decl_from_context(context: ComponentDeclLoadContext) -> Opti
     # yaml component
     if find_defs_or_component_yaml(context.path):
         return build_component_decl_from_yaml_file_backcompat(context)
-    # pythonic component
-    elif (
-        context.terminate_autoloading_on_keyword_files and (context.path / "component.py").exists()
-    ):
-        return build_component_decl_from_python_file(
-            context.for_path(context.path / "component.py")
-        )
     # defs
     elif (
         context.terminate_autoloading_on_keyword_files
         and (context.path / "definitions.py").exists()
+        and not (context.path / "component.py").exists()
     ):
-        return CompositePythonDecl(
+        return PythonFileDecl(
             context=context,
             path=ComponentPath(file_path=context.path / "definitions.py", instance_key=None),
             decls={},
@@ -329,13 +323,13 @@ def build_component_decls_from_directory_items(
 
 def build_component_decl_from_python_file(
     context: ComponentDeclLoadContext,
-) -> Union[ComponentLoaderDecl, CompositePythonDecl]:
+) -> Union[ComponentLoaderDecl, PythonFileDecl]:
     # backcompat for component.yaml
     component_def_path = context.path
     module = context.load_defs_relative_python_module(component_def_path)
     component_loaders = list(inspect.getmembers(module, is_component_loader))
 
-    return CompositePythonDecl(
+    return PythonFileDecl(
         path=ComponentPath(file_path=context.path, instance_key=None),
         context=context,
         decls={

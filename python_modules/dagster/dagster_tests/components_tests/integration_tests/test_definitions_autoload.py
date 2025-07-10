@@ -6,12 +6,7 @@ from typing import Union
 import dagster as dg
 import pytest
 from dagster._utils.env import environ
-from dagster.components.core.decl import (
-    ComponentDecl,
-    CompositePythonDecl,
-    DefsFolderDecl,
-    YamlFileDecl,
-)
+from dagster.components.core.decl import ComponentDecl, DefsFolderDecl, PythonFileDecl, YamlFileDecl
 from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent
 from dagster.components.core.tree import ComponentTree, LegacyAutoloadingComponentTree
 from dagster_shared import check
@@ -76,10 +71,10 @@ def test_definitions_component_with_explicit_file_relative_imports(
         component_tree,
         {
             ".": DefsFolderDecl,
-            "__init__.py": CompositePythonDecl,
+            "__init__.py": PythonFileDecl,
             "explicit_file_relative_imports": DefsFolderDecl,
-            "explicit_file_relative_imports/some_file.py": CompositePythonDecl,
-            "explicit_file_relative_imports/some_other_file.py": CompositePythonDecl,
+            "explicit_file_relative_imports/some_file.py": PythonFileDecl,
+            "explicit_file_relative_imports/some_other_file.py": PythonFileDecl,
         },
     )
     defs = component_tree.build_defs()
@@ -100,10 +95,10 @@ def test_definitions_component_with_explicit_file_relative_imports_init(
         component_tree,
         {
             ".": DefsFolderDecl,
-            "__init__.py": CompositePythonDecl,
+            "__init__.py": PythonFileDecl,
             "explicit_file_relative_imports_init": DefsFolderDecl,
-            "explicit_file_relative_imports_init/__init__.py": CompositePythonDecl,
-            "explicit_file_relative_imports_init/some_other_file.py": CompositePythonDecl,
+            "explicit_file_relative_imports_init/__init__.py": PythonFileDecl,
+            "explicit_file_relative_imports_init/some_other_file.py": PythonFileDecl,
         },
     )
     defs = component_tree.build_defs()
@@ -124,8 +119,8 @@ def test_definitions_component_with_explicit_file_relative_imports_complex(
         component_tree,
         {
             ".": DefsFolderDecl,
-            "__init__.py": CompositePythonDecl,
-            "explicit_file_relative_imports_complex/definitions.py": CompositePythonDecl,  # no folder bc definitions.py special name
+            "__init__.py": PythonFileDecl,
+            "explicit_file_relative_imports_complex/definitions.py": PythonFileDecl,  # no folder bc definitions.py special name
             # rest not loaded because of definitions.py
             # "explicit_file_relative_imports_complex/some_other_file.py": CompositePythonDecl,
             # "explicit_file_relative_imports_complex/submodule": DefsFolderDecl,
@@ -213,19 +208,19 @@ def test_autoload_definitions_nested(component_tree: ComponentTree) -> None:
         component_tree,
         {
             ".": DefsFolderDecl,
-            "__init__.py": CompositePythonDecl,
+            "__init__.py": PythonFileDecl,
             "definitions_at_levels": DefsFolderDecl,
-            "definitions_at_levels/top_level.py": CompositePythonDecl,
-            "definitions_at_levels/defs_object/definitions.py": CompositePythonDecl,  # no folder bc definitions.py special name
+            "definitions_at_levels/top_level.py": PythonFileDecl,
+            "definitions_at_levels/defs_object/definitions.py": PythonFileDecl,  # no folder bc definitions.py special name
             "definitions_at_levels/loose_defs": DefsFolderDecl,
-            "definitions_at_levels/loose_defs/asset.py": CompositePythonDecl,
+            "definitions_at_levels/loose_defs/asset.py": PythonFileDecl,
             "definitions_at_levels/loose_defs/inner": DefsFolderDecl,
-            "definitions_at_levels/loose_defs/inner/asset.py": CompositePythonDecl,
+            "definitions_at_levels/loose_defs/inner/asset.py": PythonFileDecl,
             "definitions_at_levels/loose_defs/inner/innerer": DefsFolderDecl,
-            "definitions_at_levels/loose_defs/inner/innerer/asset.py": CompositePythonDecl,
-            "definitions_at_levels/loose_defs/inner/innerer/innerest/definitions.py": CompositePythonDecl,  # no folder bc definitions.py special name
+            "definitions_at_levels/loose_defs/inner/innerer/asset.py": PythonFileDecl,
+            "definitions_at_levels/loose_defs/inner/innerer/innerest/definitions.py": PythonFileDecl,  # no folder bc definitions.py special name
             "definitions_at_levels/loose_defs/inner/innerer/in_init": DefsFolderDecl,
-            "definitions_at_levels/loose_defs/inner/innerer/in_init/__init__.py": CompositePythonDecl,
+            "definitions_at_levels/loose_defs/inner/innerer/in_init/__init__.py": PythonFileDecl,
         },
     )
     defs = component_tree.build_defs()
@@ -303,24 +298,24 @@ def test_ignored_empty_dir():
             {
                 ".": YamlFileDecl,
                 ComponentPath(file_path=Path("."), instance_key=0): DefsFolderDecl,
-                "top_level.py": CompositePythonDecl,
+                "top_level.py": PythonFileDecl,
                 "loose_defs": YamlFileDecl,
                 ComponentPath(file_path=Path("loose_defs"), instance_key=0): DefsFolderDecl,
-                "loose_defs/asset.py": CompositePythonDecl,
+                "loose_defs/asset.py": PythonFileDecl,
                 "loose_defs/inner": DefsFolderDecl,
-                "loose_defs/inner/asset.py": CompositePythonDecl,
+                "loose_defs/inner/asset.py": PythonFileDecl,
                 "loose_defs/inner/innerer": DefsFolderDecl,
-                "loose_defs/inner/innerer/asset.py": CompositePythonDecl,
+                "loose_defs/inner/innerer/asset.py": PythonFileDecl,
                 "loose_defs/inner/innerer/another_level": YamlFileDecl,
                 ComponentPath(
                     file_path=Path("loose_defs/inner/innerer/another_level"), instance_key=0
                 ): DefsFolderDecl,
                 "loose_defs/inner/innerer/another_level/in_init": DefsFolderDecl,
-                "loose_defs/inner/innerer/another_level/in_init/__init__.py": CompositePythonDecl,
-                "loose_defs/inner/innerer/another_level/innerest/definitions.py": CompositePythonDecl,  # no folder bc definitions.py special name
+                "loose_defs/inner/innerer/another_level/in_init/__init__.py": PythonFileDecl,
+                "loose_defs/inner/innerer/another_level/innerest/definitions.py": PythonFileDecl,  # no folder bc definitions.py special name
                 "defs_object": YamlFileDecl,
                 ComponentPath(file_path=Path("defs_object"), instance_key=0): DefsFolderDecl,
-                "defs_object/defs_object/definitions.py": CompositePythonDecl,  # no folder bc definitions.py special name
+                "defs_object/defs_object/definitions.py": PythonFileDecl,  # no folder bc definitions.py special name
             },
         )
 
@@ -350,6 +345,8 @@ def test_autoload_backcompat_components(component_tree: ComponentTree) -> None:
                 dg.AssetKey("asset_in_definitions_py"),
                 dg.AssetKey("asset_in_component_py"),
                 dg.AssetKey("top_level"),
+                # This is technically a breaking change, but it feels uncommon enough to me
+                dg.AssetKey("asset_only_in_asset_py_with_component_py"),
             },
         ),
         (
