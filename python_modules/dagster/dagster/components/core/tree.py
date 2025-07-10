@@ -18,7 +18,7 @@ from dagster.components.core.context import ComponentDeclLoadContext, ComponentL
 from dagster.components.core.decl import (
     ComponentDecl,
     ComponentLoaderDecl,
-    DagsterDefsDecl,
+    CompositePythonDecl,
     YamlDecl,
     build_component_decl_from_context,
 )
@@ -288,7 +288,11 @@ class ComponentTree:
 
         total = len(decls)
         for idx, child_decl in enumerate(decls):
-            if isinstance(child_decl, DagsterDefsDecl) and hide_plain_defs:
+            if (
+                isinstance(child_decl, CompositePythonDecl)
+                and not child_decl.decls
+                and hide_plain_defs
+            ):
                 continue
 
             component_type = None
@@ -330,7 +334,10 @@ class ComponentTree:
         if (
             hide_plain_defs
             and len(decls) > 0
-            and all(isinstance(child_decl, DagsterDefsDecl) for child_decl in decls)
+            and all(
+                isinstance(child_decl, CompositePythonDecl) and not child_decl.decls
+                for child_decl in decls
+            )
         ):
             lines.append(f"{prefix}└── ...")
 
